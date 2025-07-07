@@ -10,3 +10,31 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+# hr-management-app
+
+## Backend Setup (Express + MongoDB)
+
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file with your MongoDB URI:
+   ```env
+   MONGODB_URI=mongodb://localhost:27017/hrMannagement
+   PORT=5000
+   ```
+4. Seed dummy data:
+   ```bash
+   node seed.js
+   ```
+5. Start the backend server:
+   ```bash
+   npm start
+   ```
+
+The backend will run on `http://localhost:5000` by default.
