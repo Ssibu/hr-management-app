@@ -52,7 +52,7 @@ const EmployeePolicy = () => {
   return (
     <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg p-8 transition-all duration-200 hover:shadow-2xl">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-extrabold text-blue-900 tracking-tight drop-shadow">Employee Policy</h2>
+        <h2 className="text-3xl font-extrabold text-blue-900 tracking-tight drop-shadow">Employees</h2>
         <button
           onClick={() => { setIsModalOpen(true); setEditIndex(null); setFormData({ name: '', empId: '', number: '', address: '', experience: '', dateOfJoining: '', salary: '' }); }}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"

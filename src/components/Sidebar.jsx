@@ -8,7 +8,7 @@ const Sidebar = () => (
       <div className="border-b border-gray-700 mb-2"></div>
     </div>
     <Link to="/" className="py-3 px-6 flex items-center gap-2 hover:bg-gray-800 transition rounded-r-lg font-medium">
-      <span className="material-icons text-blue-400">badge</span> Employee Policy
+      <span className="material-icons text-blue-400">badge</span> Employees
     </Link>
     <Link to="/hr-policy" className="py-3 px-6 flex items-center gap-2 hover:bg-gray-800 transition rounded-r-lg font-medium">
       <span className="material-icons text-green-400">policy</span> HR Policy
