@@ -13,29 +13,39 @@ const EmployeePolicy = () => {
     salary: ''
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editIndex, setEditIndex] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleEdit = (idx) => {
+    setEditIndex(idx);
+    setFormData(employees[idx]);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (idx) => {
+    setEmployees(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const newEmployee = {
-      id: employees.length + 1,
-      ...formData,
-      salary: Number(formData.salary)
-    };
-    setEmployees(prev => [...prev, newEmployee]);
-    setFormData({
-      name: '',
-      empId: '',
-      number: '',
-      address: '',
-      experience: '',
-      dateOfJoining: '',
-      salary: ''
-    });
+    if (editIndex !== null) {
+      // Edit mode
+      setEmployees(prev => prev.map((emp, i) => i === editIndex ? { ...emp, ...formData, salary: Number(formData.salary) } : emp));
+      setEditIndex(null);
+    } else {
+      // Add mode
+      const newEmployee = {
+        id: employees.length + 1,
+        ...formData,
+        salary: Number(formData.salary)
+      };
+      setEmployees(prev => [...prev, newEmployee]);
+    }
+    setFormData({ name: '', empId: '', number: '', address: '', experience: '', dateOfJoining: '', salary: '' });
     setIsModalOpen(false);
   };
 
@@ -44,7 +54,7 @@ const EmployeePolicy = () => {
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-extrabold text-blue-900 tracking-tight drop-shadow">Employee Policy</h2>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => { setIsModalOpen(true); setEditIndex(null); setFormData({ name: '', empId: '', number: '', address: '', experience: '', dateOfJoining: '', salary: '' }); }}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"
         >
           + Add Employee
@@ -56,13 +66,13 @@ const EmployeePolicy = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-3xl relative border-2 border-blue-100">
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => { setIsModalOpen(false); setEditIndex(null); }}
               className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 text-3xl font-bold focus:outline-none"
               aria-label="Close"
             >
               &times;
             </button>
-            <h3 className="text-2xl font-bold mb-6 text-blue-800">Add Employee</h3>
+            <h3 className="text-2xl font-bold mb-6 text-blue-800">{editIndex !== null ? 'Edit Employee' : 'Add Employee'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 <div>
@@ -144,7 +154,7 @@ const EmployeePolicy = () => {
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"
                 >
-                  Add Employee
+                  {editIndex !== null ? 'Update Employee' : 'Add Employee'}
                 </button>
               </div>
             </form>
@@ -165,6 +175,7 @@ const EmployeePolicy = () => {
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Joining</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salary</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
@@ -178,6 +189,10 @@ const EmployeePolicy = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.experience}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.dateOfJoining}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.salary.toLocaleString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
+                  <button onClick={() => handleEdit(idx)} className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow">Edit</button>
+                  <button onClick={() => handleDelete(idx)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Delete</button>
+                </td>
               </tr>
             ))}
           </tbody>
