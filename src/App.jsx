@@ -22,14 +22,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity duration-300"
           onClick={toggleSidebar}
         />
       )}
       
       {/* Sidebar */}
       <aside 
-        className={`fixed h-screen w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col top-0 left-0 z-50 shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static ${
+        className={`fixed h-screen w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col top-0 left-0 z-40 shadow-xl transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -94,7 +94,7 @@ const Navbar = ({ toggleSidebar }) => {
   }, []);
 
   return (
-    <header className={`fixed top-0 left-0 w-full h-16 flex items-center z-30 transition-all duration-300 ${
+    <header className={`fixed top-0 left-0 w-full h-16 flex items-center z-50 transition-all duration-300 ${
       scrolled ? 'bg-gray-900 shadow-lg' : 'bg-gradient-to-r from-blue-600 to-blue-800'
     }`}>
       <div className="container mx-auto px-4 flex items-center justify-between">
@@ -136,11 +136,23 @@ const App = () => {
   return (
     <EmployeeDataProvider>
       <Router>
-        <div className="min-h-screen min-w-screen  bg-gray-100">
+        <div className="min-h-screen min-w-screen bg-gray-100">
           <Navbar toggleSidebar={toggleSidebar} />
           <div className="flex pt-16">
             <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-            <main className="flex-1 overflow-hidden ml-0 lg:ml-2 transition-all duration-300">
+            <main className="flex-1 overflow-hidden ml-0 lg:ml-2 transition-all duration-300 pt-4 relative">
+              {/* Floating open sidebar button */}
+              {!sidebarOpen && (
+                <button
+                  onClick={toggleSidebar}
+                  className="fixed top-20 left-4 z-40 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none"
+                  aria-label="Open sidebar"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              )}
               <div className="p-4 overflow-y-scroll md:p-8">
                 <Routes>
                   <Route path="/" element={<EmployeePolicy />} />
