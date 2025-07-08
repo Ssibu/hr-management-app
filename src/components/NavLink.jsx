@@ -8,7 +8,7 @@ const NavLink = ({ to, children }) => {
   return (
     <Link 
       to={to} 
-      className={`nav-tab ${isActive ? 'active' : ''}`}
+      className={`px-4 py-2 rounded transition font-medium ${isActive ? 'bg-blue-600 text-white shadow' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}
     >
       {children}
     </Link>

@@ -1,29 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useEmployeeData } from '../EmployeeDataContext';
 
 const EmployeePolicy = () => {
-  const [employees, setEmployees] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      empId: 'EMP001',
-      number: '+1-555-0123',
-      address: '123 Main St, New York, NY 10001',
-      experience: '3 years',
-      dateOfJoining: '2023-01-15',
-      salary: 75000
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      empId: 'EMP002',
-      number: '+1-555-0124',
-      address: '456 Oak Ave, Los Angeles, CA 90210',
-      experience: '5 years',
-      dateOfJoining: '2022-08-20',
-      salary: 82000
-    }
-  ]);
-
+  const { employees, setEmployees } = useEmployeeData();
   const [formData, setFormData] = useState({
     name: '',
     empId: '',
@@ -33,6 +12,7 @@ const EmployeePolicy = () => {
     dateOfJoining: '',
     salary: ''
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,13 +21,12 @@ const EmployeePolicy = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setEmployees(prev => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        ...formData
-      }
-    ]);
+    const newEmployee = {
+      id: employees.length + 1,
+      ...formData,
+      salary: Number(formData.salary)
+    };
+    setEmployees(prev => [...prev, newEmployee]);
     setFormData({
       name: '',
       empId: '',
@@ -57,96 +36,148 @@ const EmployeePolicy = () => {
       dateOfJoining: '',
       salary: ''
     });
+    setIsModalOpen(false);
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-8 mt-8">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Employee Policy</h2>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <input
-          name="name"
-          value={formData.name}
-          onChange={handleInputChange}
-          placeholder="Name"
-          required
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <input
-          name="empId"
-          value={formData.empId}
-          onChange={handleInputChange}
-          placeholder="Employee ID"
-          required
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <input
-          name="number"
-          value={formData.number}
-          onChange={handleInputChange}
-          placeholder="Phone Number"
-          required
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <input
-          name="address"
-          value={formData.address}
-          onChange={handleInputChange}
-          placeholder="Address"
-          required
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <input
-          name="experience"
-          value={formData.experience}
-          onChange={handleInputChange}
-          placeholder="Experience (e.g. 3 years)"
-          required
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <input
-          type="date"
-          name="dateOfJoining"
-          value={formData.dateOfJoining}
-          onChange={handleInputChange}
-          required
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <input
-          type="number"
-          name="salary"
-          value={formData.salary}
-          onChange={handleInputChange}
-          placeholder="Salary"
-          required
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <button type="submit" className="md:col-span-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Add Employee</button>
-      </form>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border rounded-lg overflow-hidden">
-          <thead className="bg-gray-100">
+    <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg p-8 transition-all duration-200 hover:shadow-2xl">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-extrabold text-blue-900 tracking-tight drop-shadow">Employee Policy</h2>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"
+        >
+          + Add Employee
+        </button>
+      </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-3xl relative border-2 border-blue-100">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 text-3xl font-bold focus:outline-none"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h3 className="text-2xl font-bold mb-6 text-blue-800">Add Employee</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
+                  <input
+                    name="empId"
+                    value={formData.empId}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input
+                    name="number"
+                    value={formData.number}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <input
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience</label>
+                  <input
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleInputChange}
+                    placeholder="e.g. 3 years"
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Joining</label>
+                  <input
+                    type="date"
+                    name="dateOfJoining"
+                    value={formData.dateOfJoining}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Salary</label>
+                  <input
+                    type="number"
+                    name="salary"
+                    value={formData.salary}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"
+                >
+                  Add Employee
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Employees Table */}
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-lg bg-white">
+        <table className="min-w-full divide-y divide-gray-200 text-base">
+          <thead className="bg-blue-100 sticky top-0 z-10">
             <tr>
-              <th className="py-2 px-4 border-b">ID</th>
-              <th className="py-2 px-4 border-b">Name</th>
-              <th className="py-2 px-4 border-b">Employee ID</th>
-              <th className="py-2 px-4 border-b">Phone</th>
-              <th className="py-2 px-4 border-b">Address</th>
-              <th className="py-2 px-4 border-b">Experience</th>
-              <th className="py-2 px-4 border-b">Date of Joining</th>
-              <th className="py-2 px-4 border-b">Salary</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Joining</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salary</th>
             </tr>
           </thead>
-          <tbody>
-            {employees.map(emp => (
-              <tr key={emp.id} className="hover:bg-gray-50">
-                <td className="py-2 px-4 border-b">{emp.id}</td>
-                <td className="py-2 px-4 border-b">{emp.name}</td>
-                <td className="py-2 px-4 border-b">{emp.empId}</td>
-                <td className="py-2 px-4 border-b">{emp.number}</td>
-                <td className="py-2 px-4 border-b">{emp.address}</td>
-                <td className="py-2 px-4 border-b">{emp.experience}</td>
-                <td className="py-2 px-4 border-b">{emp.dateOfJoining}</td>
-                <td className="py-2 px-4 border-b">{emp.salary}</td>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {employees.map((emp, idx) => (
+              <tr key={emp.id} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.empId}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.number}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{emp.address}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.experience}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.dateOfJoining}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.salary.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
