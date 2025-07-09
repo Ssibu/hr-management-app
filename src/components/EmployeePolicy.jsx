@@ -20,14 +20,15 @@ const EmployeePolicy = () => {
 
   // Fetch employees from backend
   useEffect(() => {
-    fetchEmployees();
+     fetchEmployees();
+     console.log(employees)
   }, []);
 
   const fetchEmployees = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch('http://localhost:5000/api/employees');
       if (!res.ok) throw new Error('Failed to fetch employees');
       const data = await res.json();
       setEmployees(data);

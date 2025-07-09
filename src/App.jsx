@@ -7,6 +7,7 @@ import EmployeePolicy from './components/EmployeePolicy';
 import HRPolicy from './components/HRPolicy';
 import EmployeeSalary from './components/EmployeeSalary';
 import EmployeeTask from './components/EmployeeTask';
+import EmployeeTaskStatus from './components/EmployeeTaskStatus';
 import { EmployeeDataProvider } from './EmployeeDataContext';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -15,7 +16,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navItems = [
     { path: "/", name: "Employee Policy", icon: <FiHome className="mr-3" /> },
     { path: "/hr-policy", name: "HR Policy", icon: <FiUsers className="mr-3" /> },
-    { path: "/employee-salary", name: "Employee Salary", icon: <FiDollarSign className="mr-3" /> }
+    { path: "/employee-salary", name: "Employee Salary", icon: <FiDollarSign className="mr-3" /> },
+    { path: "/employee-tasks", name: "Employee Tasks", icon: <FiDollarSign className="mr-3" /> },
+    { path: "/employee-task-status", name: "Employee Task Status", icon: <FiDollarSign className="mr-3" /> }
   ];
 
   return (
@@ -135,7 +138,7 @@ const App = () => {
   };
 
   return (
-    <EmployeeDataProvider>
+    
       <Router>
         <div className="min-h-screen min-w-screen bg-gray-100">
           <Navbar toggleSidebar={toggleSidebar} />
@@ -160,6 +163,7 @@ const App = () => {
                   <Route path="/hr-policy" element={<HRPolicy />} />
                   <Route path="/employee-salary" element={<EmployeeSalary />} />
                   <Route path="/employee-tasks" element={<EmployeeTask />} />
+                  <Route path="/employee-task-status" element={<EmployeeTaskStatus />} />
                   <Route path="*" element={
                     <div className="flex flex-col items-center justify-center min-h-[60vh]">
                       <div className="text-center">
@@ -180,7 +184,7 @@ const App = () => {
           </div>
         </div>
       </Router>
-    </EmployeeDataProvider>
+    
   );
 };
 

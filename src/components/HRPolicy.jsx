@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useEmployeeData } from '../EmployeeDataContext';
 
-const API_URL = 'http://localhost:5000/api/hrpolicies';
+// Update this if your backend server/port changes
+const API_BASE_URL = 'http://localhost:5000/api';
+const API_URL = `${API_BASE_URL}/hrpolicies`;
+const EMPLOYEE_API_URL = `${API_BASE_URL}/employees`;
 
 function getIncrementPercent(experienceYears) {
   if (experienceYears >= 4 && experienceYears <= 5) return 15;
@@ -23,7 +25,8 @@ function daysBetween(date1, date2) {
 }
 
 const HRPolicy = () => {
-  const { employees } = useEmployeeData();
+  
+  const [employees, setEmployees] = useState([]);
   const [eligibleEmployees, setEligibleEmployees] = useState([]);
   const [policies, setPolicies] = useState([]);
   const [formData, setFormData] = useState({ policyName: '', eligibility: '', eligibilityDays: '', description: '' });
@@ -37,8 +40,21 @@ const HRPolicy = () => {
   const [taskError, setTaskError] = useState('');
 
   useEffect(() => {
-    fetchPolicies();
+    fetchEmployees();
+    console.log(employees)
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await fetch(EMPLOYEE_API_URL);
+      if (!res.ok) throw new Error('Failed to fetch employees');
+      const data = await res.json();
+      console.log(data)
+      setEmployees(data);
+    } catch (err) {
+      // Optionally handle error
+    }
+  };
 
   const fetchPolicies = async () => {
     setLoading(true);
@@ -133,7 +149,7 @@ const HRPolicy = () => {
     setTaskLoading(true);
     setTaskError('');
     try {
-      const res = await fetch('http://localhost:5000/api/employeetasks/eligible-increments');
+      const res = await fetch(`${API_BASE_URL}/employeetasks/eligible-increments`);
       if (!res.ok) throw new Error('Failed to fetch eligible employees');
       const data = await res.json();
       setTaskEligible(data);

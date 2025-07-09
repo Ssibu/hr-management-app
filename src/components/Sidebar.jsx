@@ -19,6 +19,9 @@ const Sidebar = () => (
     <Link to="/employee-tasks" className="py-3 px-6 flex items-center gap-2 hover:bg-gray-800 transition rounded-r-lg font-medium">
       <span className="material-icons text-purple-400">task</span> Employee Tasks
     </Link>
+    <Link to="/employee-task-status" className="py-3 px-6 flex items-center gap-2 hover:bg-gray-800 transition rounded-r-lg font-medium">
+      <span className="material-icons text-pink-400">check_circle</span> My Task Status
+    </Link>
   </aside>
 );
 
