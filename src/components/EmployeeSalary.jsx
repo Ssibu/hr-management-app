@@ -1,27 +1,9 @@
-import React, { useState } from 'react';
-import { useEmployeeData } from '../EmployeeDataContext';
+import React, { useState, useEffect } from 'react';
+
+const API_URL = 'http://localhost:5000/api/employeesalaries';
 
 const EmployeeSalary = () => {
-  const { employees } = useEmployeeData();
-  const [salaries, setSalaries] = useState([
-    {
-      id: 1,
-      empId: 'EMP001',
-      name: 'John Doe',
-      increment: 5000,
-      effectiveDate: '2024-01-01',
-      remarks: 'Annual increment'
-    },
-    {
-      id: 2,
-      empId: 'EMP002',
-      name: 'Jane Smith',
-      increment: 7000,
-      effectiveDate: '2024-02-01',
-      remarks: 'Promotion'
-    }
-  ]);
-
+  const [salaries, setSalaries] = useState([]);
   const [formData, setFormData] = useState({
     empId: '',
     name: '',
@@ -29,35 +11,79 @@ const EmployeeSalary = () => {
     effectiveDate: '',
     remarks: ''
   });
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchSalaries();
+  }, []);
+
+  const fetchSalaries = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('Failed to fetch salary increments');
+      const data = await res.json();
+      setSalaries(data);
+    } catch (err) {
+      setError(err.message);
+    }
+    setLoading(false);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEdit = (idx) => {
-    setEditIndex(idx);
-    setFormData(salaries[idx]);
+  const handleEdit = (sal) => {
+    setEditId(sal._id);
+    setFormData({ ...sal });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (idx) => {
-    setSalaries(prev => prev.filter((_, i) => i !== idx));
+  const handleDelete = async (id) => {
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete salary increment');
+      fetchSalaries();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editIndex !== null) {
-      setSalaries(prev => prev.map((s, i) => i === editIndex ? { ...formData } : s));
-      setEditIndex(null);
-    } else {
-      setSalaries(prev => [...prev, { ...formData, id: salaries.length + 1 }]);
+    setError('');
+    try {
+      if (editId) {
+        // Edit mode
+        const res = await fetch(`${API_URL}/${editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error('Failed to update salary increment');
+      } else {
+        // Add mode
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error('Failed to add salary increment');
+      }
+      setFormData({ empId: '', name: '', increment: '', effectiveDate: '', remarks: '' });
+      setIsModalOpen(false);
+      setEditId(null);
+      fetchSalaries();
+    } catch (err) {
+      setError(err.message);
     }
-    setFormData({ empId: '', name: '', increment: '', effectiveDate: '', remarks: '' });
-    setIsModalOpen(false);
   };
 
   return (
@@ -65,24 +91,25 @@ const EmployeeSalary = () => {
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-extrabold text-blue-900 tracking-tight drop-shadow">Employee Salary Increment</h2>
         <button
-          onClick={() => { setIsModalOpen(true); setEditIndex(null); setFormData({ empId: '', name: '', increment: '', effectiveDate: '', remarks: '' }); }}
+          onClick={() => { setIsModalOpen(true); setEditId(null); setFormData({ empId: '', name: '', increment: '', effectiveDate: '', remarks: '' }); }}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"
         >
           + Add Salary Increment
         </button>
       </div>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85  backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-3xl relative border-2 border-blue-100">
             <button
-              onClick={() => { setIsModalOpen(false); setEditIndex(null); }}
+              onClick={() => { setIsModalOpen(false); setEditId(null); }}
               className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 text-3xl font-bold focus:outline-none"
               aria-label="Close"
             >
               &times;
             </button>
-            <h3 className="text-2xl font-bold mb-6 text-blue-800">{editIndex !== null ? 'Edit Salary Increment' : 'Add Salary Increment'}</h3>
+            <h3 className="text-2xl font-bold mb-6 text-blue-800">{editId ? 'Edit Salary Increment' : 'Add Salary Increment'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <input
@@ -127,13 +154,14 @@ const EmployeeSalary = () => {
                 />
               </div>
               <div className="flex justify-end">
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg">{editIndex !== null ? 'Update Salary Increment' : 'Add Salary Increment'}</button>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg">{editId ? 'Update Salary Increment' : 'Add Salary Increment'}</button>
               </div>
             </form>
           </div>
         </div>
       )}
       <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-lg bg-white">
+        {loading ? <p>Loading salary increments...</p> : (
         <table className="min-w-full divide-y divide-gray-200 text-base">
           <thead className="bg-blue-100 sticky top-0 z-10">
             <tr>
@@ -148,21 +176,22 @@ const EmployeeSalary = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
             {salaries.map((sal, idx) => (
-              <tr key={sal.id} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sal.id}</td>
+              <tr key={sal._id || sal.id} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sal._id || sal.id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sal.empId}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sal.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sal.increment}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sal.effectiveDate}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sal.remarks}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
-                  <button onClick={() => handleEdit(idx)} className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow">Edit</button>
-                  <button onClick={() => handleDelete(idx)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Delete</button>
+                  <button onClick={() => handleEdit(sal)} className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow">Edit</button>
+                  <button onClick={() => handleDelete(sal._id || sal.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </div>
   );

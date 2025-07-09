@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEmployeeData } from '../EmployeeDataContext';
+
+const API_URL = 'http://localhost:5000/api/hrpolicies';
 
 function getIncrementPercent(experienceYears) {
   if (experienceYears >= 4 && experienceYears <= 5) return 15;
@@ -23,40 +25,87 @@ function daysBetween(date1, date2) {
 const HRPolicy = () => {
   const { employees } = useEmployeeData();
   const [eligibleEmployees, setEligibleEmployees] = useState([]);
-  const [policies, setPolicies] = useState([
-    // Example initial data
-    { policyName: 'Leave Policy', eligibility: 'All Employees', eligibilityDays: 30, description: 'Employees are eligible for 30 days of leave per year.' },
-    { policyName: 'Work From Home', eligibility: 'Full-time Employees', eligibilityDays: 10, description: 'Full-time employees can work from home up to 10 days a year.' }
-  ]);
+  const [policies, setPolicies] = useState([]);
   const [formData, setFormData] = useState({ policyName: '', eligibility: '', eligibilityDays: '', description: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const [editIndex, setEditIndex] = useState(null); // for modal UI
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [taskEligible, setTaskEligible] = useState([]);
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [taskError, setTaskError] = useState('');
+
+  useEffect(() => {
+    fetchPolicies();
+  }, []);
+
+  const fetchPolicies = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('Failed to fetch policies');
+      const data = await res.json();
+      setPolicies(data);
+    } catch (err) {
+      setError(err.message);
+    }
+    setLoading(false);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEdit = (idx) => {
+  const handleEdit = (idx, policy) => {
     setEditIndex(idx);
-    setFormData(policies[idx]);
+    setEditId(policy._id);
+    setFormData(policy);
     setIsModalOpen(true);
   };
 
-  const handleDelete = (idx) => {
-    setPolicies(prev => prev.filter((_, i) => i !== idx));
+  const handleDelete = async (id) => {
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete policy');
+      fetchPolicies();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editIndex !== null) {
-      setPolicies(prev => prev.map((p, i) => i === editIndex ? { ...formData } : p));
+    setError('');
+    try {
+      if (editId) {
+        // Edit mode
+        const res = await fetch(`${API_URL}/${editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error('Failed to update policy');
+      } else {
+        // Add mode
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error('Failed to add policy');
+      }
+      setFormData({ policyName: '', eligibility: '', eligibilityDays: '', description: '' });
+      setIsModalOpen(false);
+      setEditId(null);
       setEditIndex(null);
-    } else {
-      setPolicies(prev => [...prev, { ...formData }]);
+      fetchPolicies();
+    } catch (err) {
+      setError(err.message);
     }
-    setFormData({ policyName: '', eligibility: '', eligibilityDays: '', description: '' });
-    setIsModalOpen(false);
   };
 
   const handleCheckEligibility = () => {
@@ -79,29 +128,45 @@ const HRPolicy = () => {
     setEligibleEmployees(eligible);
   };
 
+  // Fetch eligible employees for extra increment based on task ratings
+  const handleFetchTaskEligible = async () => {
+    setTaskLoading(true);
+    setTaskError('');
+    try {
+      const res = await fetch('http://localhost:5000/api/employeetasks/eligible-increments');
+      if (!res.ok) throw new Error('Failed to fetch eligible employees');
+      const data = await res.json();
+      setTaskEligible(data);
+    } catch (err) {
+      setTaskError(err.message);
+    }
+    setTaskLoading(false);
+  };
+
   return (
     <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg p-8 transition-all duration-200 hover:shadow-2xl">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-extrabold text-blue-900 tracking-tight drop-shadow">HR Policy</h2>
         <button
-          onClick={() => { setIsModalOpen(true); setEditIndex(null); setFormData({ policyName: '', eligibility: '', eligibilityDays: '', description: '' }); }}
+          onClick={() => { setIsModalOpen(true); setEditId(null); setEditIndex(null); setFormData({ policyName: '', eligibility: '', eligibilityDays: '', description: '' }); }}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"
         >
           + Add Policy
         </button>
       </div>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-3xl relative border-2 border-blue-100">
             <button
-              onClick={() => { setIsModalOpen(false); setEditIndex(null); }}
+              onClick={() => { setIsModalOpen(false); setEditId(null); setEditIndex(null); }}
               className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 text-3xl font-bold focus:outline-none"
               aria-label="Close"
             >
               &times;
             </button>
-            <h3 className="text-2xl font-bold mb-6 text-blue-800">{editIndex !== null ? 'Edit Policy' : 'Add Policy'}</h3>
+            <h3 className="text-2xl font-bold mb-6 text-blue-800">{editId ? 'Edit Policy' : 'Add Policy'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <input
@@ -139,7 +204,7 @@ const HRPolicy = () => {
                 />
               </div>
               <div className="flex justify-end">
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg">{editIndex !== null ? 'Update Policy' : 'Add Policy'}</button>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg">{editId ? 'Update Policy' : 'Add Policy'}</button>
               </div>
             </form>
           </div>
@@ -177,10 +242,43 @@ const HRPolicy = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.empId}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.experienceYears}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.salary.toLocaleString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.salary.toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.incrementPercent}%</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.incrementAmount.toLocaleString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.newSalary.toLocaleString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.incrementAmount.toLocaleString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.newSalary.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-800">Check Task-Based Increment Eligibility</h2>
+        <button
+          onClick={handleFetchTaskEligible}
+          className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200 shadow hover:shadow-md"
+        >
+          Check Task-Based Increment
+        </button>
+      </div>
+      {taskLoading && <p>Loading eligible employees...</p>}
+      {taskError && <p style={{ color: 'red' }}>{taskError}</p>}
+      {taskEligible.length > 0 && (
+        <div className="overflow-x-auto mb-8 rounded-2xl border border-gray-200 shadow-lg bg-white">
+          <table className="min-w-full divide-y divide-gray-200 text-base">
+            <thead className="bg-purple-100 sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Rating (180d)</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Extra Increment %</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {taskEligible.map((emp, idx) => (
+                <tr key={emp.employeeId} className={idx % 2 === 0 ? 'bg-purple-50 hover:bg-purple-100 transition' : 'hover:bg-purple-50 transition'}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp.employeeId}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.avgRating.toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.increment}%</td>
                 </tr>
               ))}
             </tbody>
@@ -189,6 +287,7 @@ const HRPolicy = () => {
       )}
       {/* HR Policies Table */}
       <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-lg bg-white">
+        {loading ? <p>Loading policies...</p> : (
         <table className="min-w-full divide-y divide-gray-200 text-base">
           <thead className="bg-blue-100 sticky top-0 z-10">
             <tr>
@@ -201,19 +300,20 @@ const HRPolicy = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
             {policies.map((policy, idx) => (
-              <tr key={idx} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
+              <tr key={policy._id || idx} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{policy.policyName}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{policy.eligibility}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{policy.eligibilityDays}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{policy.description}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
-                  <button onClick={() => handleEdit(idx)} className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow">Edit</button>
-                  <button onClick={() => handleDelete(idx)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Delete</button>
+                  <button onClick={() => handleEdit(idx, policy)} className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow">Edit</button>
+                  <button onClick={() => handleDelete(policy._id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </div>
   );

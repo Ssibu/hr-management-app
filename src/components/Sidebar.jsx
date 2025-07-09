@@ -16,6 +16,9 @@ const Sidebar = () => (
     <Link to="/employee-salary" className="py-3 px-6 flex items-center gap-2 hover:bg-gray-800 transition rounded-r-lg font-medium">
       <span className="material-icons text-yellow-400">attach_money</span> Employee Salary
     </Link>
+    <Link to="/employee-tasks" className="py-3 px-6 flex items-center gap-2 hover:bg-gray-800 transition rounded-r-lg font-medium">
+      <span className="material-icons text-purple-400">task</span> Employee Tasks
+    </Link>
   </aside>
 );
 

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { useEmployeeData } from '../EmployeeDataContext';
+import React, { useState, useEffect } from 'react';
+
+const API_URL = 'http://localhost:5000/api/employees';
 
 const EmployeePolicy = () => {
-  const { employees, setEmployees } = useEmployeeData();
+  const [employees, setEmployees] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     empId: '',
@@ -13,40 +14,79 @@ const EmployeePolicy = () => {
     salary: ''
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Fetch employees from backend
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const fetchEmployees = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('Failed to fetch employees');
+      const data = await res.json();
+      setEmployees(data);
+    } catch (err) {
+      setError(err.message);
+    }
+    setLoading(false);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEdit = (idx) => {
-    setEditIndex(idx);
-    setFormData(employees[idx]);
+  const handleEdit = (emp) => {
+    setEditId(emp._id);
+    setFormData({ ...emp, salary: emp.salary || '' });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (idx) => {
-    setEmployees(prev => prev.filter((_, i) => i !== idx));
+  const handleDelete = async (id) => {
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete employee');
+      fetchEmployees();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editIndex !== null) {
-      // Edit mode
-      setEmployees(prev => prev.map((emp, i) => i === editIndex ? { ...emp, ...formData, salary: Number(formData.salary) } : emp));
-      setEditIndex(null);
-    } else {
-      // Add mode
-      const newEmployee = {
-        id: employees.length + 1,
-        ...formData,
-        salary: Number(formData.salary)
-      };
-      setEmployees(prev => [...prev, newEmployee]);
+    setError('');
+    try {
+      if (editId) {
+        // Edit mode
+        const res = await fetch(`${API_URL}/${editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...formData, salary: Number(formData.salary) })
+        });
+        if (!res.ok) throw new Error('Failed to update employee');
+      } else {
+        // Add mode
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...formData, salary: Number(formData.salary) })
+        });
+        if (!res.ok) throw new Error('Failed to add employee');
+      }
+      setFormData({ name: '', empId: '', number: '', address: '', experience: '', dateOfJoining: '', salary: '' });
+      setIsModalOpen(false);
+      setEditId(null);
+      fetchEmployees();
+    } catch (err) {
+      setError(err.message);
     }
-    setFormData({ name: '', empId: '', number: '', address: '', experience: '', dateOfJoining: '', salary: '' });
-    setIsModalOpen(false);
   };
 
   return (
@@ -54,21 +94,20 @@ const EmployeePolicy = () => {
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-extrabold text-blue-900 tracking-tight drop-shadow">Employees</h2>
         <button
-          onClick={() => { setIsModalOpen(true); setEditIndex(null); setFormData({ name: '', empId: '', number: '', address: '', experience: '', dateOfJoining: '', salary: '' }); }}
+          onClick={() => { setIsModalOpen(true); setEditId(null); setFormData({ name: '', empId: '', number: '', address: '', experience: '', dateOfJoining: '', salary: '' }); }}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"
         >
           + Add Employee
         </button>
       </div>
-
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-3xl relative border-2 border-blue-100">
-            
-            <h3 className="text-2xl font-bold mb-6 text-blue-800">{editIndex !== null ? 'Edit Employee' : 'Add Employee'}</h3>
+            <h3 className="text-2xl font-bold mb-6 text-blue-800">{editId ? 'Edit Employee' : 'Add Employee'}</h3>
             <button
-              onClick={() => { setIsModalOpen(false); setEditIndex(null); }}
+              onClick={() => { setIsModalOpen(false); setEditId(null); }}
               className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 text-3xl font-bold focus:outline-none"
               aria-label="Close"
             >
@@ -155,16 +194,16 @@ const EmployeePolicy = () => {
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg"
                 >
-                  {editIndex !== null ? 'Update Employee' : 'Add Employee'}
+                  {editId ? 'Update Employee' : 'Add Employee'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
       {/* Employees Table */}
       <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-lg bg-white">
+        {loading ? <p>Loading employees...</p> : (
         <table className="min-w-full divide-y divide-gray-200 text-base">
           <thead className="bg-blue-100 sticky top-0 z-10">
             <tr>
@@ -181,23 +220,24 @@ const EmployeePolicy = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
             {employees.map((emp, idx) => (
-              <tr key={emp.id} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp.id}</td>
+              <tr key={emp._id || emp.id} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp._id || emp.id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.empId}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.number}</td>
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{emp.address}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.experience}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.dateOfJoining}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.salary.toLocaleString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${emp.salary?.toLocaleString()}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
-                  <button onClick={() => handleEdit(idx)} className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow">Edit</button>
-                  <button onClick={() => handleDelete(idx)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Delete</button>
+                  <button onClick={() => handleEdit(emp)} className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow">Edit</button>
+                  <button onClick={() => handleDelete(emp._id || emp.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </div>
   );
