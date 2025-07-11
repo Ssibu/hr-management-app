@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const API_URL = 'http://localhost:5000/api/employeetasks';
 
@@ -9,32 +9,41 @@ const EmployeeTask = () => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [assignedAt, setAssignedAt] = useState('');
 
   // Assign a new task
   const handleAssign = async (e) => {
     e.preventDefault();
     setError('');
     try {
+      const body = { employeeId, task };
+      if (assignedAt) body.assignedAt = new Date(assignedAt);
       const res = await fetch(`${API_URL}/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employeeId, task })
+        body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error('Failed to assign task');
       setTask('');
       setEmployeeId('');
+      setAssignedAt('');
       if (selectedEmployee === employeeId) fetchTasks(employeeId);
     } catch (err) {
       setError(err.message);
     }
   };
 
-  // Fetch tasks for an employee
+  // Fetch tasks for an employee or all if empId is empty
   const fetchTasks = async (empId) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/employee/${empId}`);
+      let res;
+      if (!empId) {
+        res = await fetch(`${API_URL}/all`);
+      } else {
+        res = await fetch(`${API_URL}/employee/${empId}`);
+      }
       if (!res.ok) throw new Error('Failed to fetch tasks');
       const data = await res.json();
       setTasks(data);
@@ -43,6 +52,11 @@ const EmployeeTask = () => {
     }
     setLoading(false);
   };
+
+  // Fetch all tasks on initial load
+  useEffect(() => {
+    fetchTasks('');
+  }, []);
 
   // Mark task as completed
   const completeTask = async (taskId) => {
@@ -103,6 +117,15 @@ const EmployeeTask = () => {
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
           />
         </div>
+        <div className="flex-1">
+          <input
+            type="datetime-local"
+            placeholder="Assigned At (optional)"
+            value={assignedAt}
+            onChange={e => setAssignedAt(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+          />
+        </div>
         <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg">Assign Task</button>
       </form>
       <div className="mb-8">
@@ -120,6 +143,7 @@ const EmployeeTask = () => {
         <table className="min-w-full divide-y divide-gray-200 text-base">
           <thead className="bg-blue-100 sticky top-0 z-10">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emp ID</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned At</th>
@@ -131,6 +155,7 @@ const EmployeeTask = () => {
           <tbody className="bg-white divide-y divide-gray-100">
             {tasks.map((t, idx) => (
               <tr key={t._id} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{t.employeeId}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{t.task}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.status}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.assignedAt ? new Date(t.assignedAt).toLocaleString() : ''}</td>
