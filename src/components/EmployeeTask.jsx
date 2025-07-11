@@ -11,6 +11,7 @@ const EmployeeTask = () => {
   const [error, setError] = useState('');
   const [assignedAt, setAssignedAt] = useState('');
   const [employees, setEmployees] = useState([]);
+  const [estimateTime, setEstimateTime] = useState('');
 
   // Assign a new task
   const handleAssign = async (e) => {
@@ -19,6 +20,7 @@ const EmployeeTask = () => {
     try {
       const body = { employeeId, task };
       if (assignedAt) body.assignedAt = new Date(assignedAt);
+      if (estimateTime) body.estimateTime = estimateTime;
       const res = await fetch(`${API_URL}/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,7 +30,8 @@ const EmployeeTask = () => {
       setTask('');
       setEmployeeId('');
       setAssignedAt('');
-      if (selectedEmployee === employeeId) fetchTasks(employeeId);
+      setEstimateTime('');
+      fetchTasks(selectedEmployee); // Always refresh the table after assignment
     } catch (err) {
       setError(err.message);
     }
@@ -57,7 +60,7 @@ const EmployeeTask = () => {
   // Fetch all tasks on initial load
   useEffect(() => {
     fetchTasks('');
-  }, []);
+  }, [tasks.length]);
 
   // Fetch all employees for the select field
   useEffect(() => {
@@ -142,6 +145,16 @@ const EmployeeTask = () => {
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
           />
         </div>
+        <div className="flex-1">
+          <input
+            type="number"
+            placeholder="Estimate Time (hours)"
+            value={estimateTime}
+            onChange={e => setEstimateTime(e.target.value)}
+            min="1"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+          />
+        </div>
         <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg">Assign Task</button>
       </form>
       <div className="mb-8">
@@ -168,6 +181,7 @@ const EmployeeTask = () => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emp ID</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estimate (hrs)</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned At</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed At</th>
@@ -180,6 +194,7 @@ const EmployeeTask = () => {
               <tr key={t._id} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{t.employeeId}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{t.task}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.estimateTime || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.status}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.assignedAt ? new Date(t.assignedAt).toLocaleString() : ''}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.completedAt ? new Date(t.completedAt).toLocaleString() : ''}</td>
