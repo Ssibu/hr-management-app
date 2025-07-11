@@ -10,6 +10,7 @@ const EmployeeTask = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [assignedAt, setAssignedAt] = useState('');
+  const [employees, setEmployees] = useState([]);
 
   // Assign a new task
   const handleAssign = async (e) => {
@@ -56,6 +57,21 @@ const EmployeeTask = () => {
   // Fetch all tasks on initial load
   useEffect(() => {
     fetchTasks('');
+  }, []);
+
+  // Fetch all employees for the select field
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/employees');
+        if (!res.ok) throw new Error('Failed to fetch employees');
+        const data = await res.json();
+        setEmployees(data);
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchEmployees();
   }, []);
 
   // Mark task as completed
@@ -129,14 +145,21 @@ const EmployeeTask = () => {
         <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl text-lg">Assign Task</button>
       </form>
       <div className="mb-8">
-        <input
-          type="text"
-          placeholder="Enter Employee ID to view tasks"
+        <select
           value={selectedEmployee}
           onChange={handleSelectEmployee}
           className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-        />
+        >
+          <option value="">All Employees</option>
+          {employees.map(emp => (
+            <option key={emp._id} value={emp._id}>{emp.name}</option>
+          ))}
+        </select>
       </div>
+      {selectedEmployee
+        ? <p className="mb-2 text-blue-700">Showing tasks for Employee: <b>{selectedEmployee}</b></p>
+        : <p className="mb-2 text-blue-700">Showing <b>all tasks</b></p>
+      }
       {loading && <p className="text-blue-700 font-semibold">Loading tasks...</p>}
       {error && <p className="text-red-600 font-semibold mb-4">{error}</p>}
       <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-lg bg-white">
