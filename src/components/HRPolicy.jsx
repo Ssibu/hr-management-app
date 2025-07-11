@@ -38,6 +38,7 @@ const HRPolicy = () => {
   const [taskEligible, setTaskEligible] = useState([]);
   const [taskLoading, setTaskLoading] = useState(false);
   const [taskError, setTaskError] = useState('');
+  const [merged, setMerged] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -142,6 +143,7 @@ const HRPolicy = () => {
       };
     }).filter(emp => emp.incrementPercent > 0);
     setEligibleEmployees(eligible);
+    console.log(eligibleEmployees)
   };
 
   // Fetch eligible employees for extra increment based on task ratings
@@ -157,6 +159,33 @@ const HRPolicy = () => {
       setTaskError(err.message);
     }
     setTaskLoading(false);
+    console.log(taskEligible)
+  };
+
+  // Merge taskEligible increments into eligibleEmployees
+  const mergeTaskIncrements = () => {
+    if (eligibleEmployees.length > 0 && taskEligible.length > 0) {
+      const taskMap = {};
+      taskEligible.forEach(te => {
+        taskMap[te.employeeId] = te.increment;
+      });
+      const updated = eligibleEmployees.map(emp => {
+        if (taskMap[emp._id]) {
+          const extra = taskMap[emp._id];
+          const newPercent = emp.incrementPercent + extra;
+          const newAmount = Math.round(emp.salary * (newPercent / 100));
+          return {
+            ...emp,
+            incrementPercent: newPercent,
+            incrementAmount: newAmount,
+            newSalary: emp.salary + newAmount
+          };
+        }
+        return emp;
+      });
+      setEligibleEmployees(updated);
+      setMerged(true);
+    }
   };
 
   return (
@@ -254,7 +283,7 @@ const HRPolicy = () => {
             <tbody className="bg-white divide-y divide-gray-100">
               {eligibleEmployees.map((emp, idx) => (
                 <tr key={emp.id} className={idx % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100 transition' : 'hover:bg-blue-50 transition'}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp._id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.empId}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.experienceYears}</td>
@@ -300,6 +329,17 @@ const HRPolicy = () => {
             </tbody>
           </table>
         </div>
+      )}
+      {/* After both eligibility checks, call mergeTaskIncrements */}
+      {/* For example, after handleFetchTaskEligible and handleCheckEligibility */}
+      {taskEligible.length > 0 && eligibleEmployees.length > 0 && (
+        <button
+          onClick={mergeTaskIncrements}
+          className={`py-2 px-6 rounded-lg transition-colors duration-200 shadow hover:shadow-md font-medium text-white ${merged ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+          disabled={merged}
+        >
+          Merge Task-Based Increments
+        </button>
       )}
       {/* HR Policies Table */}
       <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-lg bg-white">
