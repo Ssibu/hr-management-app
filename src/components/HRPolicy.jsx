@@ -314,18 +314,23 @@ const HRPolicy = () => {
             <thead className="bg-purple-100 sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Rating (180d)</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Extra Increment %</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {taskEligible.map((emp, idx) => (
-                <tr key={emp.employeeId} className={idx % 2 === 0 ? 'bg-purple-50 hover:bg-purple-100 transition' : 'hover:bg-purple-50 transition'}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp.employeeId}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.avgRating.toFixed(2)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.increment}%</td>
-                </tr>
-              ))}
+              {taskEligible.map((emp, idx) => {
+                const empObj = employees.find(e => e._id === emp.employeeId);
+                return (
+                  <tr key={emp.employeeId} className={idx % 2 === 0 ? 'bg-purple-50 hover:bg-purple-100 transition' : 'hover:bg-purple-50 transition'}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp.employeeId}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{empObj ? empObj.name : '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.avgRating.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.increment}%</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
