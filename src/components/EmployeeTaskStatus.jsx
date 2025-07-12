@@ -55,6 +55,36 @@ const EmployeeTaskStatus = () => {
     }
   };
 
+  // Pause a task
+  const pauseTask = async (taskId) => {
+    setError('');
+    try {
+      const res = await fetch(`${TASK_API_URL}/pause/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error('Failed to pause task');
+      fetchTasks(selectedEmployee);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Continue a paused task
+  const continueTask = async (taskId) => {
+    setError('');
+    try {
+      const res = await fetch(`${TASK_API_URL}/continue/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error('Failed to continue task');
+      fetchTasks(selectedEmployee);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleSelectEmployee = (e) => {
     setSelectedEmployee(e.target.value);
     fetchTasks(e.target.value);
@@ -96,10 +126,24 @@ const EmployeeTaskStatus = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.assignedAt ? new Date(t.assignedAt).toLocaleString() : ''}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.completedAt ? new Date(t.completedAt).toLocaleString() : '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
-                  {t.status !== 'completed' && t.status !== 'failed' && (
+                  {t.status === 'assigned' && (
                     <>
                       <button onClick={() => updateTaskStatus(t._id, 'in progress')} className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow">In Progress</button>
                       <button onClick={() => updateTaskStatus(t._id, 'completed')} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded shadow">Complete</button>
+                      <button onClick={() => updateTaskStatus(t._id, 'failed')} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Fail</button>
+                      <button onClick={() => pauseTask(t._id)} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded shadow">Pause</button>
+                    </>
+                  )}
+                  {t.status === 'in progress' && (
+                    <>
+                      <button onClick={() => updateTaskStatus(t._id, 'completed')} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded shadow">Complete</button>
+                      <button onClick={() => updateTaskStatus(t._id, 'failed')} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Fail</button>
+                      <button onClick={() => pauseTask(t._id)} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded shadow">Pause</button>
+                    </>
+                  )}
+                  {t.status === 'paused' && (
+                    <>
+                      <button onClick={() => continueTask(t._id)} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded shadow">Continue</button>
                       <button onClick={() => updateTaskStatus(t._id, 'failed')} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">Fail</button>
                     </>
                   )}
